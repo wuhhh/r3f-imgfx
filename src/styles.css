@@ -31,3 +31,15 @@ body {
   color: black;
   -webkit-font-smoothing: antialiased;
 }
+
+.tip {
+	position: fixed;
+	bottom: 32px;
+	left:0; right:0;
+	text-align:center;
+	font-family: monospace;
+	font-weight: bold;
+	text-transform: uppercase;
+	font-size: 14px;
+	color: #eee;
+}

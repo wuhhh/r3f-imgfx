@@ -1,7 +1,9 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { Canvas, extend } from "@react-three/fiber";
-import { Circle, OrbitControls, shaderMaterial, useTexture } from "@react-three/drei";
+import { Circle, Float, shaderMaterial, useTexture } from "@react-three/drei";
 import { useControls } from 'leva';
+import { gsap } from "gsap";
+import * as THREE from "three";
 
 const FxMaterial = new shaderMaterial(
 	{
@@ -70,35 +72,37 @@ const Scene = () => {
 	// Load texture
 	const [texture] = useTexture(["/michael-dziedzic-nc11Hg2ja-s-unsplash.jpg"]);
 
-	/* const twirlProps = useControls("Twirl", {
-		distortion: {
-			value: 5.0,
-			min: 0.0,
-			max: 5.0,
-			step: 0.001,
-		},
-		power: {
-			value: 8.0,
-			min: 0.0,
-			max: 16.0,
-			step: 0.001,
-		},
-	});
+	//
+	const tl = gsap.timeline({ repeat: -1, yoyo: true, paused: true, ease: "power2.inOut" });
 
-	const lensProps = useControls("Lens", {
-		distortion: {
+	useEffect(() => {
+		tl.fromTo(mat.current.uniforms.uDistortion, {
+			value: 2.5,
+			duration: 1.5,
+			ease: "linear"
+		}, {
 			value: 1.0,
-			min: 0.0,
-			max: 5.0,
-			step: 0.001,
-		},
-		power: {
-			value: 1.0,
-			min: 0.0,
-			max: 16.0,
-			step: 0.001,
-		},
-	}); */
+			duration: 1.5,
+			ease: "linear"
+		});
+
+		tl.from(circ.current.scale, {
+			x: 0.75,
+			y: 0.75,
+			duration: 1.0,
+			ease: "linear",
+		}, "<");
+
+		tl.from(circ.current.rotation, {
+			z: Math.PI * 0.1,
+			duration: 1.0,
+			ease: "linear",
+		}, "<");
+	}, []);
+
+	window.addEventListener("mousewheel", (e) => {
+		tl.progress(THREE.MathUtils.clamp(tl.progress() - e.wheelDeltaY / 10000, 0, 1));
+	});
 
 	const fxProps = useControls("FX", {
 		distortion: {
@@ -118,9 +122,11 @@ const Scene = () => {
 
   return (
     <>
-			<Circle ref={circ} args={[1, 64]}>
-				<fxMaterial ref={mat} uTexture={texture} uDistortion={fxProps.distortion} uPower={fxProps.power} />
-			</Circle>
+			<Float>
+				<Circle ref={circ} args={[1, 64]}>
+					<fxMaterial ref={mat} uTexture={texture} uDistortion={fxProps.distortion} uPower={fxProps.power} />
+				</Circle>
+			</Float>
     </>
   );
 };
@@ -128,7 +134,6 @@ const Scene = () => {
 const App = () => {
   return (
     <Canvas flat linear camera={{ fov: 70, position: [0, 0, 3] }}>
-      <OrbitControls />
       <Scene />
     </Canvas>
   );
