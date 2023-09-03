@@ -8,6 +8,7 @@ import * as THREE from "three";
 const FxMaterial = new shaderMaterial(
 	{
 		uTexture: undefined,
+		uTexture1: undefined,
 		uTime: 0.0,
 		// uTwirlDistortion: 0.0,
 		// uTwirlPower: 0.0,
@@ -15,6 +16,7 @@ const FxMaterial = new shaderMaterial(
 		// uLensPower: 0.0,
 		uDistortion: 0.0,
 		uPower: 0.0,
+		uMix: 0.0,
 	},
 	/*glsl*/ `
 		varying vec2 vUv;
@@ -25,12 +27,14 @@ const FxMaterial = new shaderMaterial(
 	`,
 	/*glsl*/ `
 		uniform sampler2D uTexture;
+		uniform sampler2D uTexture1;
 		// uniform float uTwirlDistortion;
 		// uniform float uTwirlPower;
 		// uniform float uLensDistortion;
 		// uniform float uLensPower;
 		uniform float uDistortion;
 		uniform float uPower;
+		uniform float uMix;
 		varying vec2 vUv;
 
 		void main() {
@@ -54,7 +58,10 @@ const FxMaterial = new shaderMaterial(
 			lensUv *= 1.0 - pow(length(lensUv * uDistortion), uPower);
 			lensUv += 0.5;
 
-			vec4 color = texture2D(uTexture, lensUv);
+			// mix between textures 
+			vec4 color = mix(texture2D(uTexture, lensUv), texture2D(uTexture1, lensUv), uMix);
+
+			// vec4 color = texture2D(uTexture, lensUv);
 			gl_FragColor = color;
 		}
 	`
@@ -66,8 +73,8 @@ const Scene = () => {
 	const circ = useRef();
 	const mat = useRef();
 
-	// Load texture
-	const [texture] = useTexture(["/michael-dziedzic-nc11Hg2ja-s-unsplash.jpg"]);
+	// Load textures
+	const [pyramid, girl] = useTexture(["/michael-dziedzic-nc11Hg2ja-s-unsplash.jpg", "/girl.jpg"]);
 
 	//
 	const tl = gsap.timeline({ repeat: -1, yoyo: true, paused: true, ease: "power2.inOut" });
@@ -82,6 +89,12 @@ const Scene = () => {
 			duration: 1.5,
 			ease: "linear"
 		});
+
+		tl.to(mat.current.uniforms.uMix, {
+			value: 1.0,
+			duration: 1.0,
+			ease: "linear",
+		}, "<");
 
 		tl.from(circ.current.scale, {
 			x: 0.75,
@@ -114,6 +127,12 @@ const Scene = () => {
 			max: 16.0,
 			step: 0.001,
 		},
+		mix: {
+			value: 0.0,
+			min: 0.0,
+			max: 1.0,
+			step: 0.001,
+		},
 	});
 
 
@@ -121,7 +140,7 @@ const Scene = () => {
     <>
 			<Float>
 				<Circle ref={circ} args={[1, 64]}>
-					<fxMaterial ref={mat} uTexture={texture} uDistortion={fxProps.distortion} uPower={fxProps.power} />
+					<fxMaterial ref={mat} uTexture={pyramid} uTexture1={girl} uDistortion={fxProps.distortion} uPower={fxProps.power} uMix={fxProps.mix} />
 				</Circle>
 			</Float>
     </>
