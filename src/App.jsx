@@ -34,9 +34,6 @@ const FxMaterial = new shaderMaterial(
 		varying vec2 vUv;
 
 		void main() {
-			// Scale uv down as distortion increases
-			
-
 			// Twirl effect
 
 			vec2 twirlUv = vUv - 0.5;
