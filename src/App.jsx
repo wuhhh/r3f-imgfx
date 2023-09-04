@@ -70,14 +70,52 @@ const FxMaterial = new shaderMaterial(
 extend({ FxMaterial });
 
 const Scene = () => {
-	const circ = useRef();
-	const mat = useRef();
+	console.log("Scene");
 
-	// Load textures
-	const [pyramid, girl] = useTexture(["/michael-dziedzic-nc11Hg2ja-s-unsplash.jpg", "/girl.jpg"]);
+	const circ = useRef(); // Circle mesh
+	const mat = useRef(); // Circle material 
+	
+	const texUniforms = [
+		"uTexture",
+		"uTexture1",
+	];
 
-	//
+	const textureMap = {
+		tex1: "/img1.jpg", // orange abstract
+		tex2: "/img2.jpg", // pink abstract
+		tex3: "/img3.jpg", // night sky 
+		tex4: "/img4.jpg", // girl
+		tex5: "/img5.jpg", // pyramid
+	};
+
+	const textures = useTexture(textureMap);
+	const currTexture = useRef('tex2');
+
 	const tl = gsap.timeline({ repeat: -1, yoyo: true, paused: true, ease: "power2.inOut" });
+
+	const textureIndex = key => Object.keys(textureMap).indexOf(key);
+
+	// Cycle texture fwd
+	const flipNext = () => {
+		const nextIndex = (textureIndex(currTexture.current) + 1) % Object.keys(textureMap).length;
+		currTexture.current = Object.keys(textureMap)[nextIndex];
+	
+		mat.current.uniforms[texUniforms[0]].value = mat.current.uniforms[texUniforms[1]].value;
+		mat.current.uniforms[texUniforms[1]].value = textures[currTexture.current];
+		
+		tl.progress(0);
+	};
+	
+	// Cycle texture bwd
+	const flipPrev = () => {
+		const prevIndex = (textureIndex(currTexture.current) - 1 + Object.keys(textureMap).length) % Object.keys(textureMap).length;
+		currTexture.current = Object.keys(textureMap)[prevIndex];
+	
+		mat.current.uniforms[texUniforms[1]].value = mat.current.uniforms[texUniforms[0]].value;
+		mat.current.uniforms[texUniforms[0]].value = textures[currTexture.current];
+		
+		tl.progress(1);
+	};
 
 	useEffect(() => {
 		tl.fromTo(mat.current.uniforms.uDistortion, {
@@ -96,21 +134,31 @@ const Scene = () => {
 			ease: "linear",
 		}, "<");
 
-		tl.from(circ.current.scale, {
+		/* tl.from(circ.current.scale, {
 			x: 0.75,
 			y: 0.75,
 			duration: 1.0,
 			ease: "linear",
-		}, "<");
+		}, "<"); */
 
-		tl.from(circ.current.rotation, {
+		/* tl.from(circ.current.rotation, {
 			z: Math.PI * 0.1,
 			duration: 1.0,
 			ease: "linear",
-		}, "<");
+		}, "<"); */
 	}, []);
 
+	// Negative delta is scroll down
 	window.addEventListener("mousewheel", (e) => {
+		// Reached end of timeline and scrolling down
+		if(tl.progress() === 1 && e.wheelDeltaY < 0) {
+			flipNext();
+			
+		}
+		// Reached beginning of timeline and scrolling up
+		else if(tl.progress() === 0 && e.wheelDeltaY > 0) {
+			flipPrev();
+		}
 		tl.progress(THREE.MathUtils.clamp(tl.progress() - e.wheelDeltaY / 10000, 0, 1));
 	});
 
@@ -140,7 +188,7 @@ const Scene = () => {
     <>
 			<Float>
 				<Circle ref={circ} args={[1, 64]}>
-					<fxMaterial ref={mat} uTexture={pyramid} uTexture1={girl} uDistortion={fxProps.distortion} uPower={fxProps.power} uMix={fxProps.mix} />
+					<fxMaterial ref={mat} uTexture={textures.tex1} uTexture1={textures.tex2} uDistortion={fxProps.distortion} uPower={fxProps.power} uMix={fxProps.mix} />
 				</Circle>
 			</Float>
     </>
