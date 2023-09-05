@@ -5,6 +5,9 @@ import { useControls } from 'leva';
 import { gsap } from "gsap";
 import * as THREE from "three";
 
+import vert from "./shaders/vert.glsl";
+import frag from "./shaders/frag.glsl";
+
 const FxMaterial = new shaderMaterial(
 	{
 		uTexture: undefined,
@@ -18,56 +21,8 @@ const FxMaterial = new shaderMaterial(
 		uPower: 0.0,
 		uMix: 0.0,
 	},
-	/*glsl*/ `
-		varying vec2 vUv;
-		void main() {
-			vUv = uv;
-			gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-		}
-	`,
-	/*glsl*/ `
-		uniform sampler2D uTexture;
-		uniform sampler2D uTexture1;
-		// uniform float uTwirlDistortion;
-		// uniform float uTwirlPower;
-		// uniform float uLensDistortion;
-		// uniform float uLensPower;
-		uniform float uDistortion;
-		uniform float uPower;
-		uniform float uMix;
-		varying vec2 vUv;
-
-		void main() {
-
-			// Twirl effect
-
-			vec2 twirlUv = vUv - 0.5;
-			float a = atan(twirlUv.y, twirlUv.x);
-			float r = length(twirlUv);
-			a -= pow(r * uDistortion, uPower);
-			twirlUv = vec2(cos(a), sin(a)) * r;
-			twirlUv += 0.5;
-
-			// Fish eye lens effect
-
-			// Offset uv so 0,0 is in the centre
-			vec2 lensUv = vec2(clamp(twirlUv.x, 0.0, 1.0), clamp(twirlUv.y, 0.0, 1.0)) - 0.5;
-			lensUv *= 1.0 - pow(length(lensUv * uDistortion), uPower);
-			lensUv += 0.5;
-
-			// Define a scaling factor
-			float scaleFactor = uMix;
-
-			// Calculate the scaled texture coordinates with recentering
-			vec2 scaledCoordinates = (lensUv - 0.5) / scaleFactor + 0.5;
-
-			// mix between textures 
-			vec4 color = mix(texture2D(uTexture, lensUv), texture2D(uTexture1, scaledCoordinates), uMix);
-
-			// vec4 color = texture2D(uTexture, lensUv);
-			gl_FragColor = color;
-		}
-	`
+	vert,
+	frag
 )
 
 extend({ FxMaterial });
@@ -82,13 +37,13 @@ const Scene = () => {
 		tex3: "/img3.jpg", // night sky 
 		tex4: "/img2.jpg", // pink abstract
 		tex5: "/img5.jpg", // pyramid
-		tex5: "/img6.jpg", // checkerboard
+		tex6: "/img6.jpg", // checkerboard
 	};
 
 	const textures = useTexture(textureMap);
 	const currTexture = useRef('tex2');
 
-	const tl = gsap.timeline({ repeat: -1, yoyo: true, paused: true, ease: "power2.inOut" });
+	const tl = gsap.timeline({ repeat: -1, yoyo: true, paused: true });
 
 	const textureIndex = key => Object.keys(textureMap).indexOf(key);	
 
@@ -117,7 +72,7 @@ const Scene = () => {
 	useEffect(() => {
 		tl.to(mat.current.uniforms.uDistortion, {
 			value: 0.0,
-			duration: 1.5,
+			duration: 1.0,
 			ease: "linear"
 		});
 
@@ -152,6 +107,7 @@ const Scene = () => {
 			flipPrev();
 		}
 		tl.progress(THREE.MathUtils.clamp(tl.progress() - e.wheelDeltaY / 10000, 0, 1));
+		console.log(tl.progress());
 	});
 
 	const fxProps = useControls("FX", {
