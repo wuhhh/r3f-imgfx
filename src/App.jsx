@@ -38,12 +38,12 @@ const FxMaterial = new shaderMaterial(
 		varying vec2 vUv;
 
 		void main() {
+
 			// Twirl effect
 
 			vec2 twirlUv = vUv - 0.5;
 			float a = atan(twirlUv.y, twirlUv.x);
 			float r = length(twirlUv);
-			// a -= pow(r * uLensDistortion, uLensPower);
 			a -= pow(r * uDistortion, uPower);
 			twirlUv = vec2(cos(a), sin(a)) * r;
 			twirlUv += 0.5;
@@ -52,14 +52,17 @@ const FxMaterial = new shaderMaterial(
 
 			// Offset uv so 0,0 is in the centre
 			vec2 lensUv = vec2(clamp(twirlUv.x, 0.0, 1.0), clamp(twirlUv.y, 0.0, 1.0)) - 0.5;
-			// vec2 lensUv = vUv - 0.5;
-			
-			// lensUv *= 1.0 - pow(length(lensUv * uLensDistortion), uLensPower);
 			lensUv *= 1.0 - pow(length(lensUv * uDistortion), uPower);
 			lensUv += 0.5;
 
+			// Define a scaling factor
+			float scaleFactor = uMix;
+
+			// Calculate the scaled texture coordinates with recentering
+			vec2 scaledCoordinates = (lensUv - 0.5) / scaleFactor + 0.5;
+
 			// mix between textures 
-			vec4 color = mix(texture2D(uTexture, lensUv), texture2D(uTexture1, lensUv), uMix);
+			vec4 color = mix(texture2D(uTexture, lensUv), texture2D(uTexture1, scaledCoordinates), uMix);
 
 			// vec4 color = texture2D(uTexture, lensUv);
 			gl_FragColor = color;
@@ -70,21 +73,14 @@ const FxMaterial = new shaderMaterial(
 extend({ FxMaterial });
 
 const Scene = () => {
-	console.log("Scene");
-
 	const circ = useRef(); // Circle mesh
 	const mat = useRef(); // Circle material 
-	
-	const texUniforms = [
-		"uTexture",
-		"uTexture1",
-	];
 
 	const textureMap = {
 		tex1: "/img1.jpg", // orange abstract
-		tex2: "/img2.jpg", // pink abstract
+		tex2: "/img4.jpg", // girl
 		tex3: "/img3.jpg", // night sky 
-		tex4: "/img4.jpg", // girl
+		tex4: "/img2.jpg", // pink abstract
 		tex5: "/img5.jpg", // pyramid
 	};
 
@@ -93,15 +89,15 @@ const Scene = () => {
 
 	const tl = gsap.timeline({ repeat: -1, yoyo: true, paused: true, ease: "power2.inOut" });
 
-	const textureIndex = key => Object.keys(textureMap).indexOf(key);
+	const textureIndex = key => Object.keys(textureMap).indexOf(key);	
 
 	// Cycle texture fwd
 	const flipNext = () => {
 		const nextIndex = (textureIndex(currTexture.current) + 1) % Object.keys(textureMap).length;
 		currTexture.current = Object.keys(textureMap)[nextIndex];
 	
-		mat.current.uniforms[texUniforms[0]].value = mat.current.uniforms[texUniforms[1]].value;
-		mat.current.uniforms[texUniforms[1]].value = textures[currTexture.current];
+		mat.current.uniforms.uTexture.value = mat.current.uniforms.uTexture1.value;
+		mat.current.uniforms.uTexture1.value = textures[currTexture.current];
 		
 		tl.progress(0);
 	};
@@ -111,8 +107,8 @@ const Scene = () => {
 		const prevIndex = (textureIndex(currTexture.current) - 1 + Object.keys(textureMap).length) % Object.keys(textureMap).length;
 		currTexture.current = Object.keys(textureMap)[prevIndex];
 	
-		mat.current.uniforms[texUniforms[1]].value = mat.current.uniforms[texUniforms[0]].value;
-		mat.current.uniforms[texUniforms[0]].value = textures[currTexture.current];
+		mat.current.uniforms.uTexture1.value = mat.current.uniforms.uTexture.value;
+		mat.current.uniforms.uTexture1.value = textures[currTexture.current];
 		
 		tl.progress(1);
 	};
@@ -153,7 +149,6 @@ const Scene = () => {
 		// Reached end of timeline and scrolling down
 		if(tl.progress() === 1 && e.wheelDeltaY < 0) {
 			flipNext();
-			
 		}
 		// Reached beginning of timeline and scrolling up
 		else if(tl.progress() === 0 && e.wheelDeltaY > 0) {
@@ -182,7 +177,6 @@ const Scene = () => {
 			step: 0.001,
 		},
 	});
-
 
   return (
     <>
