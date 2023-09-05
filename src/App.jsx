@@ -82,6 +82,7 @@ const Scene = () => {
 		tex3: "/img3.jpg", // night sky 
 		tex4: "/img2.jpg", // pink abstract
 		tex5: "/img5.jpg", // pyramid
+		tex5: "/img6.jpg", // checkerboard
 	};
 
 	const textures = useTexture(textureMap);
@@ -114,12 +115,8 @@ const Scene = () => {
 	};
 
 	useEffect(() => {
-		tl.fromTo(mat.current.uniforms.uDistortion, {
-			value: 2.5,
-			duration: 1.5,
-			ease: "linear"
-		}, {
-			value: 1.0,
+		tl.to(mat.current.uniforms.uDistortion, {
+			value: 0.0,
 			duration: 1.5,
 			ease: "linear"
 		});
@@ -128,7 +125,7 @@ const Scene = () => {
 			value: 1.0,
 			duration: 1.0,
 			ease: "linear",
-		}, "<");
+		}, 0);
 
 		/* tl.from(circ.current.scale, {
 			x: 0.75,
@@ -159,13 +156,13 @@ const Scene = () => {
 
 	const fxProps = useControls("FX", {
 		distortion: {
-			value: 0.0,
+			value: 2.5,
 			min: 0.0,
 			max: 5.0,
 			step: 0.001,
 		},
 		power: {
-			value: 8.0,
+			value: 4.0,
 			min: 0.0,
 			max: 16.0,
 			step: 0.001,
