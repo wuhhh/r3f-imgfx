@@ -52,16 +52,23 @@ const Scene = () => {
 	 */
 	const changedDirection = (dir) => lastCycle.current !== dir;
 
+	/**
+	 * Returns the next texture index
+	 */
+	const nextIndex = () => (textureIndex(currTexture.current) + 1) % Object.keys(textureMap).length;
+	
+	/**
+	 * Returns the previous texture index
+	 */
+	const prevIndex = () => (textureIndex(currTexture.current) - 1 + Object.keys(textureMap).length) % Object.keys(textureMap).length;
+
 	// Cycle texture fwd
 	const cycleFwd = () => {
-		let nextIndex = (textureIndex(currTexture.current) + 1 + Object.keys(textureMap).length) % Object.keys(textureMap).length;
-
 		if(changedDirection(1)) {
-			currTexture.current = Object.keys(textureMap)[nextIndex];
+			currTexture.current = Object.keys(textureMap)[nextIndex()];
 		}
 
-		nextIndex = (textureIndex(currTexture.current) + 1 + Object.keys(textureMap).length) % Object.keys(textureMap).length;
-		currTexture.current = Object.keys(textureMap)[nextIndex];
+		currTexture.current = Object.keys(textureMap)[nextIndex()];
 		
 		mat.current.uniforms.uTexture.value = mat.current.uniforms.uTexture1.value;
 		mat.current.uniforms.uTexture1.value = textures[currTexture.current];
@@ -72,14 +79,11 @@ const Scene = () => {
 	
 	// Cycle texture bwd
 	const cycleBwd = () => {
-		let prevIndex = (textureIndex(currTexture.current) - 1 + Object.keys(textureMap).length) % Object.keys(textureMap).length;
-
 		if(changedDirection(-1)) {
-			currTexture.current = Object.keys(textureMap)[prevIndex];
+			currTexture.current = Object.keys(textureMap)[prevIndex()];
 		}
 
-		prevIndex = (textureIndex(currTexture.current) - 1 + Object.keys(textureMap).length) % Object.keys(textureMap).length;
-		currTexture.current = Object.keys(textureMap)[prevIndex];
+		currTexture.current = Object.keys(textureMap)[prevIndex()];
 	
 		mat.current.uniforms.uTexture1.value = mat.current.uniforms.uTexture.value;
 		mat.current.uniforms.uTexture.value = textures[currTexture.current];
