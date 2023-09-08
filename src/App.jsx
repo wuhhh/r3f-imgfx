@@ -3,6 +3,7 @@ import { Canvas, extend } from "@react-three/fiber";
 import { Circle, Float, shaderMaterial, useTexture } from "@react-three/drei";
 import { useControls } from 'leva';
 import { gsap } from "gsap";
+import { Perf } from "r3f-perf";
 import * as THREE from "three";
 
 import vert from "./shaders/vert.glsl";
@@ -95,8 +96,10 @@ const Scene = () => {
 		}, 0);
 	}, []);
 
-	// Negative delta is scroll down
-	window.addEventListener("mousewheel", (e) => {
+	/**
+	 * Handles mouse wheel events
+	 */
+	const handleMouseWheel = (e) => {
 		// Reached end of timeline and scrolling down
 		if(tl.progress() === 1 && e.wheelDeltaY < 0) {
 			cycleFwd();
@@ -107,7 +110,10 @@ const Scene = () => {
 		}
 		tl.progress(THREE.MathUtils.clamp(tl.progress() - e.wheelDeltaY / 20000, 0, 1));
 		// console.log(tl.progress());
-	});
+	};
+
+	// Negative delta is scroll down
+	window.addEventListener("wheel", handleMouseWheel, false);
 
   return (
     <>
@@ -123,7 +129,8 @@ const Scene = () => {
 const App = () => {
   return (
     <Canvas flat linear camera={{ fov: 70, position: [0, 0, 3] }}>
-      <Scene />
+			<Perf />
+		  <Scene />
     </Canvas>
   );
 };
