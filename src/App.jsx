@@ -12,13 +12,6 @@ const FxMaterial = new shaderMaterial(
 	{
 		uTexture: undefined,
 		uTexture1: undefined,
-		uTime: 0.0,
-		// uTwirlDistortion: 0.0,
-		// uTwirlPower: 0.0,
-		// uLensDistortion: 0.0,
-		// uLensPower: 0.0,
-		uDistortion: 0.0,
-		uPower: 0.0,
 		uMix: 0.0,
 	},
 	vert,
@@ -30,6 +23,7 @@ extend({ FxMaterial });
 const Scene = () => {
 	const circ = useRef(); // Circle mesh
 	const mat = useRef(); // Circle material 
+	const lastCycle = useRef(); // 1 for fwd, -1 for bwd
 
 	const textureMap = {
 		tex1: "/img1.jpg", // orange abstract
@@ -45,97 +39,81 @@ const Scene = () => {
 
 	const tl = gsap.timeline({ repeat: -1, yoyo: true, paused: true });
 
+	/**
+	 * Returns the index of the texture in the textureMap
+	 * @param {string} key - The key of the texture in the textureMap
+	 */
 	const textureIndex = key => Object.keys(textureMap).indexOf(key);	
 
+	/**
+	 * Returns true if the direction of the cycle changed
+	 * @param {number} dir - The direction of the cycle (1 for fwd, -1 for bwd)
+	 */
+	const changedDirection = (dir) => lastCycle.current !== dir;
+
 	// Cycle texture fwd
-	const flipNext = () => {
-		const nextIndex = (textureIndex(currTexture.current) + 1) % Object.keys(textureMap).length;
+	const cycleFwd = () => {
+		let nextIndex = (textureIndex(currTexture.current) + 1 + Object.keys(textureMap).length) % Object.keys(textureMap).length;
+
+		if(changedDirection(1)) {
+			currTexture.current = Object.keys(textureMap)[nextIndex];
+		}
+
+		nextIndex = (textureIndex(currTexture.current) + 1 + Object.keys(textureMap).length) % Object.keys(textureMap).length;
 		currTexture.current = Object.keys(textureMap)[nextIndex];
-	
+		
 		mat.current.uniforms.uTexture.value = mat.current.uniforms.uTexture1.value;
 		mat.current.uniforms.uTexture1.value = textures[currTexture.current];
 		
+		lastCycle.current = 1;
 		tl.progress(0);
 	};
 	
 	// Cycle texture bwd
-	const flipPrev = () => {
-		const prevIndex = (textureIndex(currTexture.current) - 1 + Object.keys(textureMap).length) % Object.keys(textureMap).length;
+	const cycleBwd = () => {
+		let prevIndex = (textureIndex(currTexture.current) - 1 + Object.keys(textureMap).length) % Object.keys(textureMap).length;
+
+		if(changedDirection(-1)) {
+			currTexture.current = Object.keys(textureMap)[prevIndex];
+		}
+
+		prevIndex = (textureIndex(currTexture.current) - 1 + Object.keys(textureMap).length) % Object.keys(textureMap).length;
 		currTexture.current = Object.keys(textureMap)[prevIndex];
 	
 		mat.current.uniforms.uTexture1.value = mat.current.uniforms.uTexture.value;
-		mat.current.uniforms.uTexture1.value = textures[currTexture.current];
+		mat.current.uniforms.uTexture.value = textures[currTexture.current];
 		
+		lastCycle.current = -1;
 		tl.progress(1);
 	};
 
 	useEffect(() => {
-		tl.to(mat.current.uniforms.uDistortion, {
-			value: 0.0,
-			duration: 1.0,
-			ease: "linear"
-		});
-
 		tl.to(mat.current.uniforms.uMix, {
 			value: 1.0,
 			duration: 1.0,
 			ease: "linear",
 		}, 0);
-
-		/* tl.from(circ.current.scale, {
-			x: 0.75,
-			y: 0.75,
-			duration: 1.0,
-			ease: "linear",
-		}, "<"); */
-
-		/* tl.from(circ.current.rotation, {
-			z: Math.PI * 0.1,
-			duration: 1.0,
-			ease: "linear",
-		}, "<"); */
 	}, []);
 
 	// Negative delta is scroll down
 	window.addEventListener("mousewheel", (e) => {
 		// Reached end of timeline and scrolling down
 		if(tl.progress() === 1 && e.wheelDeltaY < 0) {
-			flipNext();
+			cycleFwd();
 		}
 		// Reached beginning of timeline and scrolling up
 		else if(tl.progress() === 0 && e.wheelDeltaY > 0) {
-			flipPrev();
+			cycleBwd();
 		}
-		tl.progress(THREE.MathUtils.clamp(tl.progress() - e.wheelDeltaY / 10000, 0, 1));
-		console.log(tl.progress());
-	});
-
-	const fxProps = useControls("FX", {
-		distortion: {
-			value: 2.5,
-			min: 0.0,
-			max: 5.0,
-			step: 0.001,
-		},
-		power: {
-			value: 4.0,
-			min: 0.0,
-			max: 16.0,
-			step: 0.001,
-		},
-		mix: {
-			value: 0.0,
-			min: 0.0,
-			max: 1.0,
-			step: 0.001,
-		},
+		tl.progress(THREE.MathUtils.clamp(tl.progress() - e.wheelDeltaY / 20000, 0, 1));
+		// console.log(tl.progress());
 	});
 
   return (
     <>
 			<Float>
 				<Circle ref={circ} args={[1, 64]}>
-					<fxMaterial ref={mat} uTexture={textures.tex1} uTexture1={textures.tex2} uDistortion={fxProps.distortion} uPower={fxProps.power} uMix={fxProps.mix} />
+					<fxMaterial ref={mat} uTexture={textures.tex1} uTexture1={textures.tex2} uMix={0.0} />
 				</Circle>
 			</Float>
     </>
