@@ -7,7 +7,9 @@ import { Perf } from "r3f-perf";
 import * as THREE from "three";
 
 import vert from "./shaders/vert.glsl";
-import frag from "./shaders/frag.glsl";
+import fragZesnullen from "./shaders/fragZesnullen.glsl";
+import fragZesnullen2 from "./shaders/fragZesnullen2.glsl";
+import fragRhomb from "./shaders/fragRhomb.glsl";
 
 const FxMaterial = new shaderMaterial(
   {
@@ -16,7 +18,7 @@ const FxMaterial = new shaderMaterial(
     uMix: 0.0,
   },
   vert,
-  frag
+  fragZesnullen
 );
 
 extend({ FxMaterial });
@@ -28,23 +30,15 @@ const Scene = () => {
 
   useControls({
     shader: {
-      value: "zesnullen",
-      options: ["zesnullen", "basic"],
+      value: "rhomb",
+      options: ["zesnullen", "zesnullen2", "rhomb"],
       onChange: val => {
         if (val === "zesnullen") {
-          mat.current.fragmentShader = frag;
-        } else if (val === "basic") {
-          mat.current.fragmentShader = /* glsl */ `
-						uniform sampler2D uTexture;
-						uniform sampler2D uTexture1;
-						uniform float uMix;
-						varying vec2 vUv;
-						
-						void main() {
-							vec4 tex1 = texture2D(uTexture, vUv);
-							gl_FragColor = tex1;
-						}
-					`;
+          mat.current.fragmentShader = fragZesnullen;
+        } else if (val === "zesnullen2") {
+					mat.current.fragmentShader = fragZesnullen2;
+				} else if (val === "rhomb") {
+          mat.current.fragmentShader = fragRhomb;
         }
 
         // mark needsUpdate true
